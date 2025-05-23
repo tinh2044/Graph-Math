@@ -1,67 +1,87 @@
 # Graph Math
 
-A modern, interactive web application for mathematical graphing and visualization. Create, save, and explore mathematical functions with a beautiful user interface.
+A modern, interactive web application for mathematical graphing and visualization. Create, save, and explore mathematical functions with a beautiful user interface powered by React and TypeScript.
 
 ![Graph Math Application](/images/app.png)
 
 ## 🚀 Technologies
 
-- ![React](https://img.shields.io/badge/React-20232A?style=flat&logo=react&logoColor=61DAFB) **React** – A JavaScript library for building user interfaces  
-- ![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=flat&logo=typescript&logoColor=white) **TypeScript** – JavaScript with syntax for types  
-- ![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=flat&logo=tailwind-css&logoColor=white) **Tailwind CSS** – Utility-first CSS framework  
-- ![Ant Design](https://img.shields.io/badge/Ant_Design-0170FE?style=flat&logo=ant-design&logoColor=white) **Ant Design** – Design system for enterprise apps  
-- ![Vite](https://img.shields.io/badge/Vite-646CFF?style=flat&logo=vite&logoColor=white) **Vite** – Next generation frontend tooling  
-- ![React Router](https://img.shields.io/badge/React_Router-CA4245?style=flat&logo=react-router&logoColor=white) **React Router** – Declarative routing for React  
-- ![Math.js](https://img.shields.io/badge/Math.js-F7DF1E?style=flat&logo=javascript&logoColor=black) **Math.js** – Extensive math library  
-- ![KaTeX](https://img.shields.io/badge/KaTeX-008080?style=flat&logoColor=white) **KaTeX** – Fast math typesetting for the web  
-- ![Plotly](https://img.shields.io/badge/Plotly-3F4F75?style=flat&logo=plotly&logoColor=white) **Plotly.js** – Interactive charting library  
+- ![React](https://img.shields.io/badge/React-20232A?style=flat&logo=react&logoColor=61DAFB) **React 19** – Modern UI library with latest features
+- ![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=flat&logo=typescript&logoColor=white) **TypeScript** – Type-safe development
+- ![Redux Toolkit](https://img.shields.io/badge/Redux-764ABC?style=flat&logo=redux&logoColor=white) **Redux Toolkit** – State management
+- ![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=flat&logo=tailwind-css&logoColor=white) **Tailwind CSS** – Utility-first CSS framework
+- ![Ant Design](https://img.shields.io/badge/Ant_Design-0170FE?style=flat&logo=ant-design&logoColor=white) **Ant Design** – Modern UI components
+- ![Vite](https://img.shields.io/badge/Vite-646CFF?style=flat&logo=vite&logoColor=white) **Vite** – Next generation frontend tooling
+- ![React Router](https://img.shields.io/badge/React_Router-CA4245?style=flat&logo=react-router&logoColor=white) **React Router** – Application routing
+- ![Math.js](https://img.shields.io/badge/Math.js-F7DF1E?style=flat&logo=javascript&logoColor=black) **Math.js** – Mathematical computations
+- ![KaTeX](https://img.shields.io/badge/KaTeX-008080?style=flat&logoColor=white) **KaTeX** & **MathLive** – Math typesetting
+- ![Plotly](https://img.shields.io/badge/Plotly-3F4F75?style=flat&logo=plotly&logoColor=white) **Plotly.js** – Interactive graphing
 
-## ✨ Features
+## ✨Features
 
-- 📈 Interactive function plotting  
-- 💾 Save favorite graphs  
-- 📜 View history of created graphs  
-- 🌓 Light/Dark theme support  
-- 📱 Responsive design for various screen sizes  
+- Interactive function plotting with real-time updates
+- Save and manage favorite graphs
+- Comprehensive graph history tracking
+- Light/Dark theme support
+- Fully responsive design
+- Advanced mathematical expressions support
+- Multiple graph types support
 
 ## 🛠️ Installation
 
-1. Clone the repository  
+1. Clone the repository
    ```bash
    git clone https://github.com/tinh2044/Graph-Math.git
    cd Graph-Math
-    ```
-2. Install dependencies
+   ```
 
+2. Install dependencies
    ```bash
    npm install
    ```
 
 3. Start the development server
-
    ```bash
    npm run dev
    ```
 
 4. Build for production
-
    ```bash
    npm run build
    ```
 
 ## 📖 Usage
 
-1. Enter a mathematical function in the input field
-2. Customize the graph settings (range, color, etc.)
-3. View the plotted graph
-4. Save interesting graphs for future reference
-5. Access your history to view previous graphs
+1. Enter a mathematical function in the input field using standard notation
+2. Customize your graph with options:
+   - Adjust X and Y axis ranges
+   - Change graph colors and styles
+   - Modify plot settings
+3. View the interactive plot
+4. Save interesting graphs to your collection
+5. Access your graph history anytime
 
-## 📁 Application Structure
+## 📁 Project Structure
 
-* **Home** – Main graphing interface
-* **Saved Graphs** – Collection of saved mathematical functions
-* **History** – Record of previously created graphs
+```
+src/
+├── components/     # Reusable UI components
+├── Layout/         # Application layout components
+├── hooks/          # Custom React hooks
+├── context/        # React context providers
+├── redux/          # Redux state management
+├── types/          # TypeScript type definitions
+├── theme/          # Theme configuration
+├── utils/          # Utility functions
+└── App.tsx         # Main application component
+```
+
+## 🧪 Development
+
+- **TypeScript** for type safety
+- **ESLint** and **Prettier** for code quality
+- **Vitest** for testing
+- **Husky** for git hooks
 
 ## 🤝 Contributing
 
