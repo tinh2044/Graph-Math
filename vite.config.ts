@@ -19,8 +19,6 @@ export default defineConfig({
     },
   },
   build: {
-    rollupOptions: {
-      external: ['buffer', 'stream', 'assert']
-    }
+    rollupOptions: {}
   }
 });
