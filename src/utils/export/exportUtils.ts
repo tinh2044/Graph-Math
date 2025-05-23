@@ -1,46 +1,32 @@
 export const exportToPNG = (
-  graphElement: HTMLElement,
+  graphDataForExport: HTMLElement | { data: unknown[]; layout: unknown; },
   fileName: string = 'graph',
   format: 'png' | 'svg' = 'png'
 ): Promise<void> => {
-  if (!window.Plotly) {
-    return Promise.reject(new Error('Plotly không được tìm thấy'));
+  if (!window.Plotly || !window.Plotly.downloadImage) {
+    return Promise.reject(new Error('Plotly or Plotly.downloadImage không được tìm thấy'));
   }
 
   return new Promise((resolve, reject) => {
     try {
       const plotly = window.Plotly;
-      if (!plotly) {
-        reject(new Error('Plotly không được tìm thấy'));
-        return;
-      }
+      const options = {
+        format: format,
+        width: 800,
+        height: 600,
+        filename: fileName
+      };
 
-      if (format === 'png') {
-        plotly.toImage(graphElement, { format: 'png', width: 800, height: 600 })
-          .then((dataUrl: string) => {
-            const link = document.createElement('a');
-            link.href = dataUrl;
-            link.download = `${fileName}.png`;
-            link.click();
-            resolve();
-          })
-          .catch((error: Error) => {
-            reject(error);
-          });
-      } else if (format === 'svg') {
-        plotly.toImage(graphElement, { format: 'svg', width: 800, height: 600 })
-          .then((dataUrl: string) => {
-            const link = document.createElement('a');
-            link.href = dataUrl;
-            link.download = `${fileName}.svg`;
-            link.click();
-            resolve();
-          })
-          .catch((error: Error) => {
-            reject(error);
-          });
-      }
+      plotly.downloadImage(graphDataForExport, options)
+        .then(() => {
+          resolve();
+        })
+        .catch((error: Error) => {
+          console.error('Plotly.downloadImage error:', error);
+          reject(error);
+        });
     } catch (error) {
+      console.error('Error in exportToPNG wrapper:', error);
       reject(error);
     }
   });
@@ -69,6 +55,15 @@ declare global {
       toImage: (
         graphElement: HTMLElement,
         options: { format: string; width: number; height: number }
+      ) => Promise<string>;
+      downloadImage: (
+        graphElement: HTMLElement | { data: unknown[]; layout: unknown; },
+        options: { 
+          format: string; 
+          width: number; 
+          height: number; 
+          filename: string 
+        }
       ) => Promise<string>;
     };
   }
