@@ -1,5 +1,5 @@
-import * as math from 'mathjs';
-
+import { ComputeEngine } from '@cortex-js/compute-engine';
+const ce = new ComputeEngine();
 interface PlotData {
   x: number[];
   y: number[];
@@ -24,10 +24,8 @@ export const generateXValues = (start: number, end: number, steps: number): numb
 
 export const isValidExpression = (expression: string): boolean => {
   try {
-    const cleanExpr = expression.trim().replace(/^y\s*=\s*/, '');
-    math.parse(cleanExpr);
-    math.evaluate(cleanExpr, { x: 1 });
-    return true;
+    const expr = ce.parse(expression);
+    return expr.isValid
   } catch (_) {
     return false;
   }
@@ -37,8 +35,8 @@ export const isValidExpression = (expression: string): boolean => {
 export const getLatexFromExpression = (expression: string): string => {
   try {
     const cleanExpr = expression.trim().replace(/^y\s*=\s*/, '');
-    const node = math.parse(cleanExpr);
-    return node.toTex({ parenthesis: 'keep', implicit: 'hide' });
+    const node = ce.parse(cleanExpr);
+    return node.toLatex();
   } catch (_) {
     return expression;
   }
@@ -50,14 +48,16 @@ export const calculatePoints = (
   xValues: number[]
 ): PlotData | CalculationError => {
   try {
-    const cleanExpr = expression.trim().replace(/^y\s*=\s*/, '');
-    const compiled = math.compile(cleanExpr);
-    
+    const expr = ce.parse(expression);
     const yValues: number[] = xValues.map(x => {
       try {
-        const result = compiled.evaluate({ x });
+        ce.pushScope();
+        ce.assign('x', ce.number(x));
+        const result = Number(expr.evaluate().value);
+        ce.popScope();
         return Number.isFinite(result) ? result : NaN;
       } catch {
+        ce.popScope();
         return NaN;
       }
     });
@@ -85,7 +85,7 @@ export const parseExpression = (expression: string) => {
     const cleanExpr = expression.trim().replace(/^y\s*=\s*/, '');
     return {
       valid: true,
-      node: math.parse(cleanExpr),
+      node: ce.parse(cleanExpr),
       latex: getLatexFromExpression(expression),
       expression: cleanExpr
     };

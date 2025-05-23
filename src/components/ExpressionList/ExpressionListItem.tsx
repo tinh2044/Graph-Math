@@ -8,7 +8,7 @@ import {
   toggleVisibility,
   type Expression
 } from '@/redux/slices/graphDataSlice';
-import { EyeOutlined, EyeInvisibleOutlined, DeleteOutlined, CheckCircleOutlined } from '@ant-design/icons';
+import { EyeOutlined, EyeInvisibleOutlined, DeleteOutlined, EditOutlined } from '@ant-design/icons';
 import { InlineMath } from 'react-katex';
 import type { AppDispatch } from '@/redux/store';
 
@@ -75,6 +75,17 @@ const ExpressionListItem: React.FC<ExpressionListItemProps> = ({ item, isActive,
               />
             </Tooltip>
           </div>
+          <Tooltip title="Chỉnh sửa">
+            <Button
+              type="text"
+              size="small"
+              icon={<EditOutlined />}
+              onClick={(e) => { 
+                e.stopPropagation(); 
+                onSetActive(item.id);
+              }}
+            />
+          </Tooltip>
           <Tooltip title="Xóa biểu thức">
             <Button
               type="text"
@@ -90,7 +101,7 @@ const ExpressionListItem: React.FC<ExpressionListItemProps> = ({ item, isActive,
       <List.Item.Meta
         avatar={null}
         title={
-          <Tooltip title={item.equation}>
+          <Tooltip title={<InlineMath>{item.equation}</InlineMath>}>
               <Tag 
                   color={item.isVisible ? item.color : 'default'} 
                  

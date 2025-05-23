@@ -1,18 +1,21 @@
-import React, { useState, useEffect, useRef, forwardRef, useImperativeHandle } from 'react';
-import { Input, Button, Alert, Typography, Popover, Tooltip, ColorPicker } from 'antd';
+/* eslint-disable react-hooks/exhaustive-deps */
+import React, { useState, useEffect, useRef, forwardRef } from 'react';
+import { Button, Alert, Typography, ColorPicker } from 'antd';
 import type { Color } from 'antd/es/color-picker';
-import type { InputRef } from 'antd';
-import { SendOutlined, DeleteOutlined, QuestionCircleOutlined } from '@ant-design/icons';
-import 'katex/dist/katex.min.css';
-import { InlineMath } from 'react-katex';
-import { isValidExpression, getLatexFromExpression } from '../utils/math/mathHelpers';
+import { SendOutlined, DeleteOutlined, EditOutlined } from '@ant-design/icons';
+import 'mathlive';
+import type { MathfieldElement } from 'mathlive';
+import { isValidExpression } from '../utils/math/mathHelpers';
 import { useDispatch, useSelector } from 'react-redux';
-import { addExpression, type Expression } from '@/redux/slices/graphDataSlice';
+import { 
+  addExpression, 
+  updateExpression, 
+  setActiveExpression,
+  setPreviewExpression
+} from '@/redux/slices/graphDataSlice';
 import type { RootState, AppDispatch } from '@/redux/store';
-import HelpContent from './MathHelp';
-import VirtualKeyboard from './VirtualKeyboard';
-import { FaKeyboard } from 'react-icons/fa';
-import useResponsive from '../hooks/useResponsive';
+import { InlineMath } from 'react-katex';
+import debounce from 'lodash/debounce';
 
 const { Text } = Typography;
 
@@ -30,45 +33,110 @@ const generateRandomHexColor = (): string => {
   return color;
 };
 
+
 // Define the handle type that will be exposed via ref
 export interface EquationInputHandle {
   handleKeyPress: (key: string) => void;
 }
 
 // Using a more concrete, albeit general, props type to satisfy linter with forwardRef
-const EquationInput = forwardRef<EquationInputHandle, React.ComponentPropsWithoutRef<'div'>>((props, ref) => {
-  const [inputValue, setInputValue] = useState<string>('');
-  const [latex, setLatex] = useState<string>('');
+const EquationInput = forwardRef<EquationInputHandle, React.ComponentPropsWithoutRef<'div'>>(() => {
+  const [latexValue, setLatexValue] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [selectedColor, setSelectedColor] = useState<string>(generateRandomHexColor());
-  
-  const { isMobile } = useResponsive();
-  const [showKeyboardDesktop, setShowKeyboardDesktop] = useState<boolean>(false);
-  
-  const inputRef = useRef<InputRef>(null);
-  
+  const [isEditMode, setIsEditMode] = useState<boolean>(false);
+
+  const mathFieldRef = useRef<MathfieldElement>(null);
   const dispatch = useDispatch<AppDispatch>();
-  const { activeExpression, expressions } = useSelector((state: RootState) => state.graphData);
+  const { activeExpression } = useSelector((state: RootState) => state.graphData);
+
+  // Debounced function to update preview
+  const debouncedPreviewUpdate = debounce((value: string, color: string) => {
+    if (value && isValidExpression(value)) {
+      dispatch(setPreviewExpression({
+        equation: value,
+        latex: value,
+        color: color,
+        isVisible: true,
+        id: 'preview'
+      }));
+    } else {
+      dispatch(setPreviewExpression(null));
+    }
+  }, 300);
+
+  // Effect to handle input changes for preview
+  useEffect(() => {
+    if (latexValue) {
+      debouncedPreviewUpdate(latexValue, selectedColor);
+    } else {
+      dispatch(setPreviewExpression(null));
+    }
+    return () => {
+      debouncedPreviewUpdate.cancel();
+    };
+  }, [latexValue, selectedColor]);
+
+  // Clear preview when component unmounts
+  useEffect(() => {
+    return () => {
+      dispatch(setPreviewExpression(null));
+    };
+  }, []);
+
+  // Effect to handle active expression changes
+  useEffect(() => {
+    if (activeExpression) {
+      setLatexValue(activeExpression.latex);
+      setSelectedColor(activeExpression.color);
+      setIsEditMode(true);
+      if (mathFieldRef.current) {
+        mathFieldRef.current.value = activeExpression.latex;
+      }
+    } else {
+      resetForm();
+    }
+  }, [activeExpression]);
+
+  const resetForm = () => {
+    setLatexValue('');
+    setIsEditMode(false);
+    setError(null);
+    setSelectedColor(generateRandomHexColor());
+    if (mathFieldRef.current) {
+      mathFieldRef.current.value = '';
+    }
+    dispatch(setPreviewExpression(null));
+  };
 
   useEffect(() => {
-    if (!inputValue.trim()) {
-      setLatex('');
-      setError(null);
-      return;
-    }
+    const mathField = mathFieldRef.current;
+    if (mathField) {
+      const handleInput = (evt: Event) => {
+        const target = evt.target as MathfieldElement;
+        const currentLatex = target.value;
+        setLatexValue(currentLatex);
 
-    try {
-      if (isValidExpression(inputValue)) {
-        setLatex(getLatexFromExpression(inputValue));
-        setError(null);
-      } else {
-        setError('Biểu thức không hợp lệ');
-      }
-    } catch (_) {
-      setError('Lỗi phân tích biểu thức');
+        if (!currentLatex.trim()) {
+          setError(null);
+          dispatch(setPreviewExpression(null));
+          return;
+        }
+        if (isValidExpression(currentLatex)) {
+          setError(null);
+        } else {
+          setError('Biểu thức không hợp lệ');
+          dispatch(setPreviewExpression(null));
+        }
+      };
+
+      mathField.addEventListener('input', handleInput);
+      return () => {
+        mathField.removeEventListener('input', handleInput);
+      };
     }
-  }, [inputValue]);
+  }, []);
 
   useEffect(() => {
     if (success) {
@@ -76,36 +144,37 @@ const EquationInput = forwardRef<EquationInputHandle, React.ComponentPropsWithou
       return () => clearTimeout(timer);
     }
   }, [success]);
-  
+
   const handleSubmit = () => {
-    if (!inputValue.trim() || error) return;
+    if (!latexValue.trim() || error) return;
 
     try {
-      if (isValidExpression(inputValue)) {
-        const newExpressionData = {
-          equation: inputValue,
-          latex: getLatexFromExpression(inputValue),
-          color: selectedColor,
-          isVisible: true,
-        };
-
-        dispatch(addExpression(newExpressionData));
-        
-        setSuccess(`Đã thêm "${inputValue}"`);
-        setInputValue('');
-        setLatex('');
-        setError(null);
-
-        // Select next random color, try to avoid immediate collision
-        const usedColors = expressions.map((exp: Expression) => exp.color);
-        let nextColor = generateRandomHexColor();
-        let attempts = 0;
-        while (usedColors.includes(nextColor) && attempts < 10) {
-          nextColor = generateRandomHexColor();
-          attempts++;
+      if (isValidExpression(latexValue)) {
+        if (isEditMode && activeExpression) {
+          // Update existing expression
+          dispatch(updateExpression({
+            id: activeExpression.id,
+            updates: {
+              equation: latexValue,
+              latex: latexValue,
+              color: selectedColor,
+            }
+          }));
+          setSuccess(`Đã cập nhật "${latexValue}"`);
+          dispatch(setActiveExpression(null)); // Clear active expression
+        } else {
+          // Add new expression
+          const newExpressionData = {
+            equation: latexValue,
+            latex: latexValue,
+            color: selectedColor,
+            isVisible: true,
+          };
+          dispatch(addExpression(newExpressionData));
+          setSuccess(`Đã thêm "${latexValue}"`);
         }
-        setSelectedColor(nextColor);
-
+        
+        resetForm();
       } else {
         setError('Biểu thức không hợp lệ');
       }
@@ -113,53 +182,17 @@ const EquationInput = forwardRef<EquationInputHandle, React.ComponentPropsWithou
       setError('Lỗi khi thêm biểu thức');
     }
   };
-  
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') handleSubmit();
-  };
 
-  // This function will be exposed via ref
-  const handleKeyPress = (key: string) => {
-    if (key === 'BACKSPACE') {
-      setInputValue((prev) => prev.slice(0, -1));
-    } else if (key === 'DELETE') {
-      setInputValue('');
-    } else if (key === 'ENTER') {
-      handleSubmit();
-    } else if (key === 'FUNCTIONS_PANEL' || key === 'SPEECH_INPUT' || key === 'TOGGLE_ALPHA' || key === 'CURSOR_LEFT' || key === 'CURSOR_RIGHT') {
-      // Placeholder for special function keys - can be implemented later
-      console.log('Special key pressed:', key);
-    } else {
-      setInputValue((prev) => prev + key);
-    }
-    inputRef.current?.focus();
-  };
-
-  // Expose handleKeyPress via ref
-  useImperativeHandle(ref, () => ({
-    handleKeyPress,
-  }));
-
-  const handleToggleKeyboardDesktop = () => {
-    setShowKeyboardDesktop(prev => !prev);
+  const handleCancel = () => {
+    dispatch(setActiveExpression(null));
+    resetForm();
   };
 
   return (
     <>
-      {/* Keyboard Toggle Button - DESKTOP ONLY */}
-      {!isMobile && (
-        <Button
-          icon={<FaKeyboard size={24} />}
-          onClick={handleToggleKeyboardDesktop}
-          className="!fixed !bottom-4 !left-4 !z-30 !w-12 !h-12 !rounded-full !p-0 flex items-center justify-center shadow-lg"
-          type={showKeyboardDesktop ? "primary" : "default"}
-          title={showKeyboardDesktop ? "Ẩn bàn phím" : "Hiện bàn phím"}
-        />
-      )}
-
       <div className="flex flex-col gap-2">
         <div className="flex items-center justify-between mb-1 text-xs">
-          <span>Nhập biểu thức</span>
+          <span className='text-lg'>{isEditMode ? 'Chỉnh sửa biểu thức' : 'Nhập biểu thức'}</span>
           <div className="flex items-center gap-1">
             <ColorPicker
               value={selectedColor}
@@ -170,105 +203,81 @@ const EquationInput = forwardRef<EquationInputHandle, React.ComponentPropsWithou
               size="small"
               trigger="click"
             />
-            <Popover
-              content={<HelpContent />}
-              trigger="click"
-              placement="right"
-            >
-              <Button
-                type="text"
-                size="small"
-                icon={<QuestionCircleOutlined />}
-                className="!p-1"
-              />
-            </Popover>
           </div>
         </div>
 
-        <Input
-          ref={inputRef}
-          placeholder="x^2 + 1"
-          value={inputValue}
-          onChange={(e) => setInputValue(e.target.value)}
-          onKeyDown={handleKeyDown}
-          className="!py-1 !text-xs"
-          suffix={
-            <>
-              {inputValue && (
-                <Button
-                  type="text"
-                  size="small"
-                  icon={<DeleteOutlined />}
-                  onClick={() => setInputValue("")}
-                  className="!p-0"
-                />
-              )}
-              <Button
-                type="primary"
-                size="small"
-                icon={<SendOutlined />}
-                onClick={handleSubmit}
-                disabled={!inputValue.trim() || !!error}
-                className="!px-2 !py-0 ml-1"
-              />
-            </>
-          }
-          status={error ? "error" : ""}
-          size="small"
-        />
+        <div className="flex items-center gap-2">
+          {React.createElement(
+            "math-field",
+            {
+              ref: mathFieldRef,
+              menu: false,
+              "virtual-keyboard-mode": "manual",
+              "virtual-keyboard-toggle": "true",
+              style: {
+                flexGrow: 1,
+                border: error ? "1px solid red" : "1px solid #d9d9d9",
+                borderRadius: "6px",
+                padding: "4px 8px",
+                fontSize: "14px",
+              },
+            },
+            latexValue
+          )}
+          {latexValue && (
+            <Button
+              type="text"
+              size="middle"
+              color='red'
+              icon={<DeleteOutlined className="!text-lg !text-red-500"  />}
+              onClick={() => {
+                setLatexValue("");
+                if (mathFieldRef.current) mathFieldRef.current.value = "";
+                setError(null);
+                mathFieldRef.current?.focus();
+              }}
+              className="!p-0"
+              title="Xóa"
+            />
+          )}
+          <Button
+            type="primary"
+            size="small"
+            icon={isEditMode ? <EditOutlined /> : <SendOutlined />}
+            onClick={handleSubmit}
+            disabled={!latexValue.trim() || !!error}
+            className="!px-2 !py-0"
+            title={isEditMode ? "Cập nhật" : "Thêm"}
+          />
+          {isEditMode && (
+            <Button
+              type="default"
+              size="small"
+              onClick={handleCancel}
+              className="!px-2 !py-0"
+            >
+              Hủy
+            </Button>
+          )}
+        </div>
 
         {error && (
           <Alert
-            message={error}
+            message={<div>
+              <span>{error} : </span>
+              <InlineMath>{latexValue}</InlineMath>
+            </div>}
             type="error"
-            showIcon
-            closable
-            className="!text-xs !py-0 !px-2"
+            className="!text-xs sm:!text-md !py-1 !px-2 !rounded-md"
           />
         )}
 
-        {success && (
-          <Alert
-            message={success}
-            type="success"
-            showIcon
-            closable
-            className="!text-xs !py-0 !px-2"
-          />
-        )}
-
-        {latex && !error && (
-          <Tooltip title={inputValue}>
-            <div
-              className="text-xs text-center equation-display"
-              style={{ color: selectedColor }}
-            >
-              <InlineMath math={latex} />
-            </div>
-          </Tooltip>
-        )}
-
-        {activeExpression && (
-          <Tooltip title="Biểu thức đang chọn">
-            <div className="text-xs text-center equation-display">
-              <InlineMath math={activeExpression.latex} />
-            </div>
-          </Tooltip>
-        )}
-
-        {!inputValue && !activeExpression && !latex && (
+        {!latexValue && !activeExpression && (
           <Text type="secondary" className="text-xs">
-            Nhập biểu thức toán học (ví dụ: x^2 + 1)
+            Nhập biểu thức toán học (ví dụ: <InlineMath>x^2 + 1</InlineMath>)
           </Text>
         )}
       </div>
-
-      {/* VIRTUAL KEYBOARD FOR DESKTOP - Fixed, if toggled. isMobile is always false here */}
-      {!isMobile && showKeyboardDesktop && (
-        <div className="!fixed !bottom-0 !left-0 !right-0 !z-20 md:!bottom-4 md:!left-4 md:!right-auto md:max-w-md">
-          <VirtualKeyboard onKeyPress={handleKeyPress} isMobile={false} />
-        </div>
-      )}
     </>
   );
 });

@@ -1,23 +1,12 @@
 import React from 'react';
-import { useDispatch } from 'react-redux';
 import { InlineMath } from 'react-katex';
 import type { Expression } from '@/redux/slices/graphDataSlice';
-import { toggleVisibility } from '@/redux/slices/graphDataSlice';
-import type { AppDispatch } from '@/redux/store';
-import type { ThemeMode } from '@/redux/slices/themeSlice'; // Use ThemeMode directly
 
 interface CustomGraphLegendProps {
   expressions: Expression[];
-  theme: ThemeMode; // Corrected type for theme prop
 }
 
-const CustomGraphLegend: React.FC<CustomGraphLegendProps> = ({ expressions, theme }) => {
-  const dispatch = useDispatch<AppDispatch>();
-
-  const handleToggleVisibility = (expressionId: string) => {
-    dispatch(toggleVisibility(expressionId));
-  };
-
+const CustomGraphLegend: React.FC<CustomGraphLegendProps> = ({ expressions }) => {
   const visibleExpressions = expressions.filter(exp => exp.isVisible);
 
   if (visibleExpressions.length === 0) {

@@ -48,7 +48,7 @@ const GraphToolbar: React.FC<GraphToolbarProps> = ({
   );
 
   return (
-    <Space direction="vertical" className='absolute top-0 z-10 right-6'>
+    <Space direction="vertical" className='absolute top-0 z-10 right-2 sm:right-6'>
       <Popover
         content={graphOptionsContent}
         title="Tùy chọn đồ thị"

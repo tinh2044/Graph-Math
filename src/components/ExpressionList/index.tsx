@@ -29,7 +29,7 @@ const ExpressionList: React.FC = () => {
   }
 
   return (
-    <div className="px-2 py-1 expression-list-container">
+    <div className="px-2 py-1 h-[100px] sm:h-fit overflow-y-auto">
       <List
         size="small"
         dataSource={expressions}

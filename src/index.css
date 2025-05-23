@@ -95,13 +95,6 @@ body {
   }
 }
 
-.equation-display {
-  padding: 16px;
-  border-radius: var(--border-radius);
-  background-color: var(--component-bg);
-  transition: background-color var(--transition-duration);
-  overflow-x: auto;
-}
 
 .ant-card {
   box-shadow: var(--card-shadow);
@@ -146,7 +139,6 @@ body {
   max-width: 300px;
 }
 
-/* Tag styling */
 .ant-tag {
   cursor: pointer;
   transition: all 0.2s;
@@ -157,7 +149,6 @@ body {
   transform: translateY(-1px);
 }
 
-/* Graph controls */
 .graph-controls {
   position: absolute;
   top: 10px;
@@ -167,7 +158,6 @@ body {
   gap: 8px;
 }
 
-/* Placeholder style */
 .empty-placeholder {
   display: flex;
   flex-direction: column;

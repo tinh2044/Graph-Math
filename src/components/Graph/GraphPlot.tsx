@@ -4,6 +4,7 @@ import { EyeInvisibleOutlined, QuestionCircleOutlined } from '@ant-design/icons'
 import Plot from 'react-plotly.js';
 import { type Data, type Layout } from 'plotly.js';
 import type { Expression } from '@/redux/slices/graphDataSlice';
+import { InlineMath } from 'react-katex';
 
 const { Text } = Typography;
 
@@ -14,7 +15,6 @@ interface GraphPlotProps {
   loading: boolean;
   expressions: Expression[];
   graphRef: React.Ref<HTMLDivElement>;
-  fullScreen: boolean;
   onShowAll: () => void;
 }
 
@@ -25,7 +25,6 @@ const GraphPlot: React.FC<GraphPlotProps> = ({
   loading,
   expressions,
   graphRef,
-  fullScreen,
   onShowAll,
 }) => {
   const totalExpressions = expressions.length;
@@ -35,7 +34,7 @@ const GraphPlot: React.FC<GraphPlotProps> = ({
       ref={graphRef}
       style={{
         width: "100%",
-        height: fullScreen ? "100vh" : "100%",
+        height: "100%",
         transition: "height 0.3s ease",
       }}
     >
@@ -113,8 +112,8 @@ const GraphPlot: React.FC<GraphPlotProps> = ({
           <Space style={{ marginTop: 16 }}>
             <QuestionCircleOutlined />
             <Text type="secondary">
-              Gợi ý: Thử nhập <Text code>sin(x)</Text> hoặc{" "}
-              <Text code>x^2 - 4</Text>
+              Gợi ý: Thử nhập <Text code><InlineMath>sin(x)</InlineMath></Text> hoặc{" "}
+              <Text code><InlineMath>x^2 - 4</InlineMath></Text>
             </Text>
           </Space>
         </div>

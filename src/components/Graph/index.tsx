@@ -6,7 +6,7 @@ import {
   type Expression,
 } from "@/redux/slices/graphDataSlice";
 import type { RootState, AppDispatch } from "@/redux/store";
-import { type Data, type Layout } from "plotly.js";
+import type { Data, Layout } from "plotly.js";
 import katex from 'katex';
 import 'katex/dist/katex.min.css';
 import { calculatePoints, generateXValues } from "@/utils/math/mathHelpers";
@@ -19,17 +19,16 @@ import useResponsive from "@/hooks/useResponsive";
 
 const Graph: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
-  const { expressions } = useSelector((state: RootState) => state.graphData);
+  const { expressions, previewExpression } = useSelector((state: RootState) => state.graphData);
   const { theme } = useSelector((state: RootState) => state.theme);
-  const { isMobile } = useResponsive();
+  const isMobile = useResponsive();
 
   const [loading, setLoading] = useState(false);
   const [showOptions, setShowOptions] = useState(false);
-  const [xRange, setXRange] = useState<[number, number]>([-3500, 4500]);
-  const [yRange, setYRange] = useState<[number, number]>([-2500, 2500]);
+  const [xRange, setXRange] = useState<[number, number]>([-10, 10]);
+  const [yRange, setYRange] = useState<[number, number]>([-10, 10]);
   const [resolution, setResolution] = useState(500);
   const [showGrid, setShowGrid] = useState(true);
-  const [fullScreen, setFullScreen] = useState(false);
   const graphRef = useRef<HTMLDivElement>(null);
 
   const handleResetView = () => {
@@ -46,10 +45,8 @@ const Graph: React.FC = () => {
       const visibleExpressions = expressions.filter(
         (exp: Expression) => exp.isVisible
       );
-      if (visibleExpressions.length === 0) {
-        setLoading(false);
-        return [];
-      }
+
+      // Create traces array with visible expressions
       const traces: Partial<Data>[] = visibleExpressions.map(
         (expression: Expression) => {
           const result = calculatePoints(expression.equation, xValues);
@@ -84,6 +81,38 @@ const Graph: React.FC = () => {
           };
         }
       );
+
+      // Add preview expression if it exists
+      if (previewExpression) {
+        const previewResult = calculatePoints(previewExpression.equation, xValues);
+        if (!("error" in previewResult)) {
+          let previewTraceName = previewExpression.equation;
+          try {
+            previewTraceName = katex.renderToString(previewExpression.latex, {
+              throwOnError: false,
+              displayMode: false,
+              output: 'html',
+            });
+          } catch (e) {
+            console.error("Katex rendering error for preview legend:", e);
+          }
+
+          traces.push({
+            x: previewResult.x,
+            y: previewResult.y,
+            type: "scatter",
+            mode: "lines",
+            name: `${previewTraceName} (Preview)`,
+            line: { 
+              color: previewExpression.color, 
+              width: 2,
+              dash: 'dot',
+            } as { color: string; width: number; dash: string },
+            opacity: 0.7,
+          });
+        }
+      }
+
       setLoading(false);
       return traces;
     } catch (_) {
@@ -95,7 +124,7 @@ const Graph: React.FC = () => {
   const plotData = useMemo(
     () => calculateGraphData(),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [expressions, xRange, yRange, resolution]
+    [expressions, previewExpression, xRange, yRange, resolution]
   );
 
   const handleExport = async () => {
@@ -238,7 +267,7 @@ const Graph: React.FC = () => {
         </Modal>
       )}
       
-      <CustomGraphLegend expressions={expressions} theme={theme} />
+      <CustomGraphLegend expressions={expressions} />
       <GraphPlot
         plotData={plotData}
         layout={layout}
@@ -246,7 +275,6 @@ const Graph: React.FC = () => {
         loading={loading}
         expressions={expressions}
         graphRef={graphRef}
-        fullScreen={fullScreen}
         onShowAll={handleShowAllExpressions}
       />
     </div>
